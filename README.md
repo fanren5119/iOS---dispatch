@@ -18,4 +18,13 @@
         GCD有三种队列类型：
         ① The main queue：与主线程功能相同。实际上，提交至main queue的任务会在主
     线程中执行。main queue可以调用dispatch_get_main_queue()来获得，因为main queue
-    与主线程相关，所以是`串行队列`；
+    与主线程相关，所以是串行队列；
+        ② Global queues：全局队列是并发队列，并由整个进程共享。进程中存在三个全局
+    队列；高、中(默认)、低、后台四个优先级队列。可以调用dispatch_get_global_queue
+    函数传入优先级来访问队列。优先级有：
+            #define DISPATCH_QUEUE_PRIORITY_HIGH        2
+            #define DISPATCH_QUEUE_PRIORITY_DEFAULT     0
+            #define DISPATCH_QUEUE_PRIORITY_LOW         (-2)
+            #define DISPATCH_QUEUE_PRIORITY_BACKGROUND  INT16_MIN
+        ③ 用户队列：（用户创建的队列）使用函数dispatch_queue_create创建的队列。这
+    些队列是串行的，正因为如此，他们可以用来完成同步机制。

@@ -96,6 +96,12 @@
             //定时处理
         });
         dispatch_resume(timer);
+        当计算机睡眠时，定时器dispatch source会被挂起，稍后系统唤醒时，定时器也会自
+    动唤醒。根据你提供的设置，暂停定时器可能会影响定时器下一次的触发。如果定时器使
+    用dispatch_time函数或者DISPATCH_TIME_NOW常量设置，定时器会使用系统默认时钟来确
+    定合适触发，但默认时钟在计算机睡眠时不会继续。如果你使用dispatch_walltime来设置
+    定时器，则定时器会根据挂钟时间来跟踪，这种定时器比较适合触发间隔相对比较大的场
+    合，可以防止定时器触发间隔出现太大的误差。
 ##10.dispatch源的其他函数
         ① dispatch_source_get_handle：得到dispatch源创建，即调用dispatch_source_c
     reate的第二个参数；

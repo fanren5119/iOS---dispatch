@@ -45,7 +45,8 @@
     并发或串行；
         ④ dispatch_barrier_async：这个函数可以设置同步执行的block，他会等到在他加
     入队列之前的block执行完毕之后，才开始执行；在他之后加入队列的block，则等到这
-    个block执行完毕之后才开始执行；
+    个block执行完毕之后才开始执行；此函数一般在并发队列中使用；而且只能搭配自定义
+    的并发队列，不能使用dispatch_get_global_queue;
         ⑤ dispatch_barrier_sync：同上，除了他是同步返回函数；
         ⑥ dispatch_after：延迟执行block；
         ⑦ dispatch_set_target_queue：他会把需要执行的任务对象指定到不同的队列中去

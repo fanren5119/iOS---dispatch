@@ -88,8 +88,8 @@
         包括定时器、监控文件的读写、监控文件系统、监控信号或进程等，基本上调用的方
     式原理和上面相同，只是有可能是系统自动触发时间。
         例如dispatch定时器：
-        dispatch_source_t source timer = dispatch_source_create(DISPATCH_SOURCE_T
-    YPE_TIMER, 0, 0, queue);
+        dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER
+    , 0, 0, queue);
         dispatch_source_set_timer(timer, dispatch_walltime(NULL, 0), 10*NSEC_PER_
     SEC, 1*NSEC_PER_SEC); //每10秒触发timer，误差1秒
         dispatch_source_set_event_handle(timer, ^{

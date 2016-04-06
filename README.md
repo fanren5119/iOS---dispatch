@@ -137,7 +137,10 @@
     配
         dispatch_group_enter(group);
         dispatch_group_leave(group);
-        ② dispatch信号量（dispatch semaphore）
+        ② dispatch信号量（dispatch semaphore），信号量是一个整形值并且具有一个初始
+    计数值，并且支持两个操作：信号通知和等待。当一个信号量被通知，其技术会被增加，
+    当一个线程在一个信号量上等待时，线程会被阻塞，直至计数器大于0，然后线程会减少
+    这个计数。
         //创建信号量，可以设置信号量的资源数，0表示没有资源
         dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
         //等待信号，可以设置超时参数，该函数返回0表示得到通知，非0表示超时

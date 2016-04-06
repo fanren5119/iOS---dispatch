@@ -3,6 +3,9 @@
     并发程序的编写。从基本功能上看，有点像NSOperationQueue，他们都允许程序将任务
     分为多个单一任务，然后提交至工作队列来并发或串行地执行。
         GCD比NSOperationQueue更底层，更搞笑，并且他不是Cocoa框架的一部分。
+        GCD的另一个用处是让程序在后台较长久的运行，没有使用GCD，当APP被按home键
+    退出，app仅有最多5秒的时间做一些保存或清理资源的工作，但是使用GCD，app最多有
+    10分钟的时间在后台运行。
 ##1.GCD的优势
         ① 易用：GCD比NSThread更简单易用。GCD可以控制诸如等待任务结束、监视文件描
     述符、周期执行代码以及工作挂起等任务。并且基于block语法，导致他能极为简单的
@@ -32,7 +35,12 @@
     据传入的参数选择生成队列的类型；
             DISPATCH_QUEUE_SERIAL       串行队列
             DISPATCH_QUEUE_CONCURRENT   并行队列
-##5.GCD队列的使用
+##5.各种队列的执行效果
+            |全局并发队列|手动创建串行队列|主队列
+        ----|------------|----------------|------
+        同步|没有开启分线程（串行）|没有开启分线程（串行）|没有开启分线程（串行）
+        异步|开启分线程（并发）|开启分线程（串行）|没有开启分线程（串行）
+##6.GCD队列的使用
         ① dispatch_async：异步执行
         ② dispatch_sync：同步执行
         ③ dispatch_apply：重复执行block，需要注意的是该方法是同步返回，也就是说等
@@ -40,7 +48,8 @@
     并发或串行；
         ④ dispatch_barrier_async：这个函数可以设置同步执行的block，他会等到在他加
     入队列之前的block执行完毕之后，才开始执行；在他之后加入队列的block，则等到这
-    个block执行完毕之后才开始执行；
+    个block执行完毕之后才开始执行；此函数使用的队列一定是使用用户队列中的并发队列
+    ，否则此函数就相当于dispatch_async；
         ⑤ dispatch_barrier_sync：同上，除了他是同步返回函数；
         ⑥ dispatch_after：延迟执行block；
         ⑦ dispatch_set_target_queue：他会把需要执行的任务对象指定到不同的队列中去
@@ -52,12 +61,12 @@
         dispatch_suspend(dispatchA);
     则只会暂停dispatchA上原来的block的执行，dispatchB的block则不受影响。而如果暂
     停dispatchB的运行，则会暂停dispatchA的运行。
-##6.GCD源（dispatch source）
+##7.GCD源（dispatch source）
         dispatch源和runLoop源概念上有些类似的地方，而且使用起来更加简单，dispatch
     源可以看成一种特别的生产消费模式。dispatch源好比生产的数据，当有新数据时，会自
     动在dispatch指定的队列（即消费队列）上运行相应的block，生产和消费同步是dispatch
     源自动管理的。
-##7.GCD源的使用步骤
+##8.GCD源的使用步骤
         ① dispatch_source_create：创建dispatch源，这里使用加法来合并dispatch源数
     据，同事指定dispatch队列；
         ② dispatch_source_set_event_handle：设置响应dispatch源事件的block，在
@@ -78,19 +87,25 @@
             //网络请求
             dispatch_source_merge_data(source, 1); //通知队列
         });
-##8.dispatch源还支持其他的一些系统源
+##9.dispatch源还支持其他的一些系统源
         包括定时器、监控文件的读写、监控文件系统、监控信号或进程等，基本上调用的方
     式原理和上面相同，只是有可能是系统自动触发时间。
         例如dispatch定时器：
-        dispatch_source_t source timer = dispatch_source_create(DISPATCH_SOURCE_T
-    YPE_TIMER, 0, 0, queue);
+        dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER
+    , 0, 0, queue);
         dispatch_source_set_timer(timer, dispatch_walltime(NULL, 0), 10*NSEC_PER_
     SEC, 1*NSEC_PER_SEC); //每10秒触发timer，误差1秒
         dispatch_source_set_event_handle(timer, ^{
             //定时处理
         });
         dispatch_resume(timer);
-##9.dispatch源的其他函数
+        当计算机睡眠时，定时器dispatch source会被挂起，稍后系统唤醒时，定时器也会自
+    动唤醒。根据你提供的设置，暂停定时器可能会影响定时器下一次的触发。如果定时器使
+    用dispatch_time函数或者DISPATCH_TIME_NOW常量设置，定时器会使用系统默认时钟来确
+    定合适触发，但默认时钟在计算机睡眠时不会继续。如果你使用dispatch_walltime来设置
+    定时器，则定时器会根据挂钟时间来跟踪，这种定时器比较适合触发间隔相对比较大的场
+    合，可以防止定时器触发间隔出现太大的误差。
+##10.dispatch源的其他函数
         ① dispatch_source_get_handle：得到dispatch源创建，即调用dispatch_source_c
     reate的第二个参数；
         ② dispatch_source_get_mask：得到dispatch源创建，即调用dispatch_source_cre
@@ -102,7 +117,7 @@
     于关闭文件或socket等，释放相关资源；
         ⑥ dispatch_source_set_registration_handle：可用于设置dispatch源启动时调用
     block，调用完即释放这个block，也可在block源运行当中随时调用这个函数。
-##10.dispatch同步
+##11.dispatch同步
         GCD提供两种方式支持dispatch队列同步，即dispatch组合信号量：
         ① dispatch组（dispatch group）
         //创建dispatch组
@@ -122,14 +137,17 @@
     配
         dispatch_group_enter(group);
         dispatch_group_leave(group);
-        ② dispatch信号量（dispatch semaphore）
+        ② dispatch信号量（dispatch semaphore），信号量是一个整形值并且具有一个初始
+    计数值，并且支持两个操作：信号通知和等待。当一个信号量被通知，其技术会被增加，
+    当一个线程在一个信号量上等待时，线程会被阻塞，直至计数器大于0，然后线程会减少
+    这个计数。
         //创建信号量，可以设置信号量的资源数，0表示没有资源
         dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
         //等待信号，可以设置超时参数，该函数返回0表示得到通知，非0表示超时
         dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
         //通知信号，如果等待线程被唤醒，则返回非0，否则返回0
         dispatch_semaphore_signal(semaphore);
-##11.单次初始化
+##12.单次初始化
         GCD还提供单次初始化支持，这个与pthread中的函数pthread_once很相似，GCD提供
     的方式的优点在于他使用block而非函数指针；
         这个特性的主要用途是蓝星单例的初始化或者其他的线程安全数据共享；

@@ -2,7 +2,7 @@
         GCD全称Grand Central Dispatch，是一套底层的API，提供了一种新的方法来进行
     并发程序的编写。从基本功能上看，有点像NSOperationQueue，他们都允许程序将任务
     分为多个单一任务，然后提交至工作队列来并发或串行地执行。
-        GCD比NSOperationQueue更底层，更搞笑，并且他不是Cocoa框架的一部分。
+        GCD比NSOperationQueue更底层，更高效，并且他不是Cocoa框架的一部分。
         GCD的另一个用处是让程序在后台较长久的运行，没有使用GCD，当APP被按home键
     退出，app仅有最多5秒的时间做一些保存或清理资源的工作，但是使用GCD，app最多有
     10分钟的时间在后台运行。
